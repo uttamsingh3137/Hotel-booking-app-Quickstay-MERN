@@ -1,8 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 import { cities } from "../assets/assets";
 import { assets } from "../assets/assets";
+import { useAppContext } from "../context/AppContext";
 
 function Hero() {
+  const { navigate, getToken, axios, setSearchedCities } = useAppContext();
+  const [destination, setDestination] = useState("");
+
+  const onSearch = async (e) => {
+    e.preventDefault();
+    navigate(`/rooms?destination=${destination}`);
+
+    await axios.post(
+      "/api/user/store-recent-search",
+      { recentSearchedCities: destination },
+      {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      },
+    );
+    setSearchedCities((prev) => {
+      const updatedSearchedCities = [...prev, destination];
+
+      if (updatedSearchedCities.length > 3) {
+        updatedSearchedCities.shift();
+      }
+      return updatedSearchedCities;
+    });
+  };
+
   return (
     <div className='flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 xl:px-32 text-white bg-[url("/src/assets/heroImage.png")] bg-no-repeat bg-cover bg-center h-screen '>
       <p className="bg-[#49B9FF]/50 px-3.5 py-1 rounded-full mt-20">
@@ -18,12 +45,18 @@ function Hero() {
         and resorts. Start your journey today.
       </p>
 
-      <form className="bg-white text-gray-500 rounded-lg px-6 py-4  flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto mt-8">
+      <form
+        onSubmit={onSearch}
+        className="bg-white text-gray-500 rounded-lg px-6 py-4  flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto mt-8"
+      >
         <div>
           <div className="flex items-center gap-2">
+            <img
+              src={assets.calenderIcon}
+              alt="calenderIcon"
+              className="h-4 "
+            />
 
-            <img src={assets.calenderIcon} alt="calenderIcon" className="h-4 "/>
-            
             <label htmlFor="destinationInput">Destination</label>
           </div>
           <input
@@ -33,19 +66,24 @@ function Hero() {
             className=" rounded border border-gray-200 px-3 py-1.5 mt-1.5 text-sm outline-none"
             placeholder="Type here"
             required
+            onChange={(e) => setDestination(e.target.value)}
+            value={destination}
           />
           <datalist id="destinations">
-            {cities.map((city,index)=>(<option value={city} 
-            key={index} />))}
-
+            {cities.map((city, index) => (
+              <option value={city} key={index} />
+            ))}
           </datalist>
         </div>
 
         <div>
           <div className="flex items-center gap-2">
-            <img src={assets.calenderIcon} alt="calenderIcon" className="h-4 "/>
+            <img
+              src={assets.calenderIcon}
+              alt="calenderIcon"
+              className="h-4 "
+            />
 
-           
             <label htmlFor="checkIn">Check in</label>
           </div>
           <input
@@ -57,8 +95,7 @@ function Hero() {
 
         <div>
           <div className="flex items-center gap-2">
-            
-            <img src={assets.calenderIcon} alt="" className="h-4 "/>
+            <img src={assets.calenderIcon} alt="" className="h-4 " />
 
             <label htmlFor="checkOut">Check out</label>
           </div>
@@ -82,10 +119,8 @@ function Hero() {
         </div>
 
         <button className="flex items-center justify-center gap-1 rounded-md bg-black py-3 px-4 text-white my-auto cursor-pointer max-md:w-full max-md:py-1">
+          <img src={assets.searchIcon} alt="searchIcon" className="h-7 " />
 
-            
-            <img src={assets.searchIcon} alt="searchIcon" className="h-7 "/>
-         
           <span>Search</span>
         </button>
       </form>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
+import { useClerk, UserButton } from "@clerk/clerk-react";
+import { useAppContext } from "../context/AppContext";
 
 const BookIcon = () => (
   <svg
@@ -35,21 +36,18 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { openSignIn } = useClerk();
-  const { user } = useUser();
-  const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
+  const { user, navigate, isOwner, setShowHotelReg } = useAppContext();
 
-    if(location.pathname !== '/'){
+  useEffect(() => {
+    if (location.pathname !== "/") {
       setIsScrolled(true);
       return;
-    }else{
+    } else {
       setIsScrolled(false);
     }
-    setIsScrolled(prev =>location.pathname !== '/' ? true : prev);
-
-
+    setIsScrolled((prev) => (location.pathname !== "/" ? true : prev));
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -92,14 +90,16 @@ const Navbar = () => {
             />
           </a>
         ))}
-        <button
-          className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
-            isScrolled ? "text-black" : "text-white"
-          } transition-all`}
-          onClick={() => navigate("/owner")}
-        >
-          Dashboard
-        </button>
+        {user && 
+          <button
+            className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
+              isScrolled ? "text-black" : "text-white"
+            } transition-all`}
+            onClick={() => isOwner? navigate("/owner") : setShowHotelReg(true) }
+          >
+            {isOwner ? "Dashboard" : "List Your Hotel"}
+          </button>
+        }
       </div>
 
       {/* Desktop Right */}
@@ -117,7 +117,7 @@ const Navbar = () => {
             <UserButton.MenuItems>
               <UserButton.Action
                 label="My Bookings"
-                labelIcon={<BookIcon />} // ✅ correct prop + element
+                labelIcon={<BookIcon />}
                 onClick={() => navigate("/my-bookings")}
               />
             </UserButton.MenuItems>
@@ -179,9 +179,11 @@ const Navbar = () => {
         {user && (
           <button
             className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all"
-            onClick={() => navigate("/owner")}
+            onClick={() =>
+              isOwner ? navigate("/owner") : setShowHotelReg(true)
+            }
           >
-            Dashboard
+            {isOwner ? "Dashboard" : "List Your Hotel"}
           </button>
         )}
 

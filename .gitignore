@@ -1,2 +1,4 @@
 frontend-hotel-book-app/.env
 server/.env
+.env
+.env.*

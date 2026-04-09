@@ -2,6 +2,7 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
 import transporter from "../configs/nodemailer.js";
+import stripe from "stripe";
 
 //func to check availability of room
 const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
@@ -39,9 +40,14 @@ export const checkAvailabilityAPI = async (req, res) => {
 // POST /api/bookings/book
 
 export const createBooking = async (req, res) => {
-
   try {
-    const { roomId: room, checkInDate, checkOutDate, guests, paymentMethod } = req.body;
+    const {
+      roomId: room,
+      checkInDate,
+      checkOutDate,
+      guests,
+      paymentMethod,
+    } = req.body;
     const user = req.user._id;
     //before booking check availability
 
@@ -50,7 +56,6 @@ export const createBooking = async (req, res) => {
       checkOutDate,
       room,
     });
-
 
     if (!isAvailable) {
       return res.json({ success: false, message: "Room is not available" });
@@ -150,5 +155,44 @@ export const getHotelBookings = async (req, res) => {
       success: false,
       message: "failed to fetch bookings",
     });
+  }
+};
+
+//stripe payment
+
+export const stripePayment = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const booking = await Booking.findById(bookingId);
+    const roomData = await Room.findById(booking.room).populate("hotel");
+    const totalPrice = booking.totalPrice;
+    const { origin } = req.headers;
+
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+    const line_items = [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: roomData.hotel.name,
+          },
+          unit_amount: totalPrice * 100,
+        },
+        quantity: 1,
+      },
+    ];
+
+    const session = await stripeInstance.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${origin}/loader/my-bookings`,
+      cancel_url: `${origin}/my-bookings`,
+      metadata: {
+        bookingId,
+      },
+    });
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    res.json({ success: false, message: "Payment Failed" });
   }
 };

@@ -16,16 +16,35 @@ function MyBookings() {
       });
       if (data.success) {
         setBookings(data.booking);
-      }else{
-        toast.error(data.message || "Failed to fetch bookings")
+      } else {
+        toast.error(data.message || "Failed to fetch bookings");
       }
     } catch (error) {
       toast.error(error.message || "Failed to fetch bookings");
     }
   };
 
+  const handlePayment = async (bookingId) => {
+    try {
+      const { data } = await axios.post(
+        `/api/bookings/stripe-payment`,
+        { bookingId },
+        {
+          headers: { Authorization: `Bearer ${await getToken()}` },
+        },
+      );
+      if (data.success) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   useEffect(() => {
-    if(user){
+    if (user) {
       fetchBookings();
     }
   }, [user]);
@@ -43,13 +62,12 @@ function MyBookings() {
           <div className="w-1/3">Date & Timings</div>
           <div className="w-1/3">Payment</div>
         </div>
-        { 
-          booking.map((booking) => (
-            <div
-              key={booking._id}
-              className="grid grid-cols-1 md:grid-cols-[3fr_2fr_1fr] w-full border-b border-gray-300 py-6 first:border-t"
-            >
-              {/* Hotel Details */}
+        {booking.map((booking) => (
+          <div
+            key={booking._id}
+            className="grid grid-cols-1 md:grid-cols-[3fr_2fr_1fr] w-full border-b border-gray-300 py-6 first:border-t"
+          >
+            {/* Hotel Details */}
             <div className="flex flex-col md:flex-row">
               <img
                 src={booking.room.images[0]}
@@ -105,13 +123,13 @@ function MyBookings() {
                 </p>
               </div>
               {!booking.isPaid && (
-                <button className="px-4 py-1.5 mt-4 text-xs border border-gray-400 rounded-full hover:bg-gray-50 transition-all cursor-pointer">
+                <button onClick={()=>handlePayment(booking._id)} className="px-4 py-1.5 mt-4 text-xs border border-gray-400 rounded-full hover:bg-gray-50 transition-all cursor-pointer">
                   Pay Now
                 </button>
               )}
             </div>
           </div>
-        )) }
+        ))}
       </div>
     </div>
   );
